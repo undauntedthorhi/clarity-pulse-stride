@@ -8,6 +8,10 @@ requirements = []
 path = "contracts/pulse-stride.clar"
 depends_on = []
 
+[contracts.step-oracle]
+path = "contracts/step-oracle.clar"
+depends_on = []
+
 [contracts.step-token]
 path = "contracts/step-token.clar"
 depends_on = []
