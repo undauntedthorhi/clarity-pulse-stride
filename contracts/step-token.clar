@@ -4,20 +4,35 @@
 (define-fungible-token step-token)
 
 (define-constant contract-owner tx-sender)
+(define-constant token-name "StepToken")
+(define-constant token-symbol "STEP")
+(define-constant token-decimals u6)
 
 ;; SIP010 Implementation
 (define-public (transfer (amount uint) (sender principal) (recipient principal) (memo (optional (buff 34))))
-  ;; Implementation
+  (begin
+    (asserts! (is-eq tx-sender sender) (err u1))
+    (asserts! (> amount u0) (err u2))
+    (match (ft-transfer? step-token amount sender recipient)
+      success (ok success)
+      error (err u3))
+  )
 )
 
-(define-public (mint (amount uint) (recipient principal))
-  ;; Implementation
-)
+(define-read-only (get-name)
+  (ok token-name))
 
-;; Read Only Functions
-(define-read-only (get-name))
-(define-read-only (get-symbol))
-(define-read-only (get-decimals))
-(define-read-only (get-balance (owner principal)))
-(define-read-only (get-total-supply))
-(define-read-only (get-token-uri))
+(define-read-only (get-symbol)
+  (ok token-symbol))
+
+(define-read-only (get-decimals)
+  (ok token-decimals))
+
+(define-read-only (get-balance (owner principal))
+  (ok (ft-get-balance step-token owner)))
+
+(define-read-only (get-total-supply)
+  (ok (ft-get-supply step-token)))
+
+(define-read-only (get-token-uri)
+  (ok none))
