@@ -7,6 +7,8 @@
 (define-constant err-already-joined (err u102))
 (define-constant err-invalid-stake (err u103))
 (define-constant err-challenge-expired (err u104))
+(define-constant err-challenge-incomplete (err u105))
+(define-constant err-already-completed (err u106))
 
 ;; Data Variables
 (define-data-var challenge-counter uint u0)
@@ -29,7 +31,8 @@
   {
     steps: uint,
     completed: bool,
-    staked: uint
+    staked: uint,
+    stake-returned: bool
   }
 )
 
@@ -74,11 +77,30 @@
       {
         steps: u0,
         completed: false,
-        staked: (get stake-amount challenge)
+        staked: (get stake-amount challenge),
+        stake-returned: false
       }
     )
     (ok true)
   )
 )
 
-;; Additional functions implementation...
+(define-public (complete-challenge (challenge-id uint))
+  (let (
+    (challenge (unwrap! (map-get? challenges challenge-id) err-invalid-challenge))
+    (participant-data (unwrap! (map-get? challenge-participants { challenge-id: challenge-id, participant: tx-sender }) err-invalid-challenge))
+    (current-time block-height)
+  )
+    (asserts! (>= (get steps participant-data) (get target-steps challenge)) err-challenge-incomplete)
+    (asserts! (not (get completed participant-data)) err-already-completed)
+    
+    ;; Return stake to participant
+    (try! (as-contract (stx-transfer? (get staked participant-data) tx-sender tx-sender)))
+    
+    (map-set challenge-participants
+      { challenge-id: challenge-id, participant: tx-sender }
+      (merge participant-data { completed: true, stake-returned: true })
+    )
+    (ok true)
+  )
+)
